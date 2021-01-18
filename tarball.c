@@ -168,8 +168,5 @@ void archive(const char *out, char *filesv[])
         ++filesv; 
     }
 
-    // null terminated block
-    populate("", block, 0, 512); 
-    write(td, block, LENGTH(block)); 
     close(td); 
 }
