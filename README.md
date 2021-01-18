@@ -59,3 +59,10 @@ Arch/Manjaro:
 > sudo pacman -Syu ncurses
 
 # How to Use
+
+---
+
+# DEVLOG
+
+Sun Jan 17, 2021 8:33 PM - Tahsin Ahmed\
+Implemented archiving tars that are compatible with Unix `tar` tool.\
