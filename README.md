@@ -49,14 +49,20 @@ Our program will implement the `tar` archiving algorithm as well as provide a UI
 
 * ncurses: used to create a command line interface. 
   
-Mac/OSX:
-> brew install ncurses
+Mac OSX:
+```
+brew install ncurses
+```
 
-Debian/Ubuntu: 
-> sudo apt-get install libncurses-dev
+Debian/Ubuntu:
+```
+sudo apt-get install libncurses-dev
+```
 
-Arch/Manjaro: 
-> sudo pacman -Syu ncurses
+Arch/Manjaro:
+```
+sudo pacman -Syu ncurses
+```
 
 # How to Use
 
