@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -8,6 +9,8 @@
 #include <sys/types.h>
 
 #include "tarball.h"
+
+#define RECORD_SIZE 512
 
 #define LENGTH(arr) (sizeof(arr) / sizeof(arr[0]))
 
@@ -26,10 +29,10 @@ const int FILE_TYPES[] = {
     S_IFIFO,    // '6' FIFO
 }; 
 
-unsigned short checksum(char header[512])
+unsigned short checksum(char *header)
 {
     unsigned short c = 0; 
-    for(int i = 0; i < 512; ++i)
+    for(int i = 0; i < RECORD_SIZE; ++i)
         c += header[i]; 
     return c; 
 }
@@ -43,7 +46,7 @@ char ftype(int mode)
     return 0; 
 }
 
-void populate(const char *field, char header[512], int start, int size)
+void populate(const char *field, char *header, int start, int size)
 {
     int n = 0; 
     while(n < size && field[n])
@@ -58,7 +61,7 @@ void populate(const char *field, char header[512], int start, int size)
     }
 }
 
-int get_header(const char *path, char header[512]) 
+int get_header(const char *path, char *header) 
 {
     struct stat buf; 
     int status = stat(path, &buf); 
@@ -144,29 +147,88 @@ int get_header(const char *path, char header[512])
     return status; 
 }
 
-void archive(const char *out, char *filesv[])
+off_t get_size(char **filesv)
 {
-    int td = open(out, O_CREAT | O_WRONLY, 0644); 
-    int fd; 
-    char block[512]; 
-    int b; 
-
+    off_t size = 0; 
+    struct stat buf; 
     while(*filesv)
     {
-        // header
-        get_header(*filesv, block);  
-        write(td, block, LENGTH(block)); 
-
-        // content
-        fd = open(*filesv, O_RDONLY); 
-        while((b = read(fd, block, LENGTH(block))) == LENGTH(block))
-            write(td, block, LENGTH(block)); 
-        populate("", block, b, LENGTH(block)-b); 
-        write(td, block, LENGTH(block)); 
-        close(fd); 
-
-        ++filesv; 
+        stat(*filesv, &buf); 
+        size += buf.st_size; 
+        filesv++; 
     }
+    return size; 
+}
 
+struct tarball * new_tarball(char *out, char **filesv)
+{
+    struct tarball *tar = (struct tarball *) malloc(sizeof(struct tarball)); 
+    tar->out = out; 
+    tar->filesv = filesv; 
+    tar->fcur = 0; 
+    tar->pos = 0; 
+    tar->size = get_size(filesv); 
+    tar->done = 0; 
+    return tar; 
+}
+
+double archive(struct tarball *tar, int records)
+{
+    // finished
+    if(tar->done == tar->size) 
+        return 1; 
+
+    // create buffer
+    char buffer[RECORD_SIZE * records]; 
+    char *bufptr = buffer; 
+
+    char *file = tar->filesv[tar->fcur]; 
+    while(file && bufptr - buffer < LENGTH(buffer))
+    {
+        // open files
+        int fd = open(file, O_RDONLY); 
+        lseek(fd, tar->pos, SEEK_SET);  
+
+        // load header (if necessary)
+        if(tar->pos == 0)
+        {
+            get_header(file, bufptr); 
+            bufptr += RECORD_SIZE; 
+        }
+        
+        // load files contents
+        int nbytes = LENGTH(buffer) - (bufptr - buffer); 
+        int rbytes = read(fd, bufptr, nbytes);   
+        bufptr += rbytes; 
+        if(rbytes % RECORD_SIZE)
+        {
+            // uneven record aka file finished
+            int padding = RECORD_SIZE - (rbytes % RECORD_SIZE); 
+            populate("", bufptr, 0, padding); 
+            bufptr += padding; 
+        }
+        tar->done += rbytes; 
+
+        // go to next file
+        tar->pos = lseek(fd, 0, SEEK_CUR); 
+        if(tar->pos == lseek(fd, 0, SEEK_END))
+        {
+            tar->fcur++; 
+            tar->pos = 0; 
+            file = tar->filesv[tar->fcur]; 
+        }
+
+        close(fd); 
+    }
+    // add padding
+    int nbytes = LENGTH(buffer) - (bufptr - buffer); 
+    populate("", bufptr, 0, nbytes); 
+
+    // write to tar
+    int td = open(tar->out, O_CREAT | O_WRONLY, 0644); 
+    lseek(td, 0, SEEK_END); 
+    write(td, buffer, LENGTH(buffer)); 
     close(td); 
+
+    return (double) tar->done / tar->size; 
 }

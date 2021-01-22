@@ -72,3 +72,7 @@ sudo pacman -Syu ncurses
 
 Sun Jan 17, 2021 8:33 PM - Tahsin Ahmed\
 Implemented archiving tars that are compatible with Unix `tar` tool.\
+\
+Fri Jan 22, 2021 12:45 AM - Tahsin Ahmed\
+Add tarball struct to store progress of an archive event. Also redefined archive function to be more modular.\
+\

@@ -10,10 +10,12 @@ tarball_test: tarball.o tarball_test.o
 .PHONY: clean test
 
 clean: 
-	-rm *.o *.tar
+	-rm *.o
 
 test: tarball_test
+	echo "ARCHIVE TEST"
 	echo "hello world" > hello.txt
+	./tarball_test -c hello.tar hello.txt
 	tar -cvf hello2.tar hello.txt
-	./tarball_test -o hello.tar hello.txt
-	-rm hello.txt
+	diff -s hello.tar hello2.tar
+	-rm tarball_test hello.txt *.o *.tar
