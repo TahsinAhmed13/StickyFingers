@@ -5,7 +5,7 @@ tarball_test.o: tarball_test.c tarball.h
 	gcc -c tarball_test.c
 
 tarball_test: tarball.o tarball_test.o
-	gcc -o tarball_test tarball.o tarball_test.o
+	gcc -lm -o tarball_test tarball.o tarball_test.o
 
 .PHONY: clean test
 
@@ -18,4 +18,8 @@ test: tarball_test
 	./tarball_test -c hello.tar hello.txt
 	tar -cvf hello2.tar hello.txt
 	diff -s hello.tar hello2.tar
-	-rm tarball_test hello.txt *.o *.tar
+	echo "EXTRACT TEST"
+	mv hello.txt hello2.txt
+	./tarball_test -x hello.tar
+	diff -s hello.txt hello2.txt
+	-rm tarball_test *.txt *.o *.tar
