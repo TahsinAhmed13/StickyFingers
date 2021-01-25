@@ -22,6 +22,8 @@ struct view
     int i; 
 } file_view, queue_view; 
 
+WINDOW *progress_bar; 
+
 char HOME[256]; 
 
 void setup(); 
@@ -39,7 +41,7 @@ void append_dir(char *, char *);
 void add_file(struct view *, char *); 
 void remove_file(struct view *, int); 
 
-void send(char *, struct view *); 
+void update_progress(double); 
 
 void cleanup(); 
 
@@ -67,23 +69,20 @@ int main()
             if(cur_view == &file_view)
             {
                 char *fname = file_view.filelist[file_view.i]; 
-                struct stat sb; 
-                stat(fname, &sb); 
-                if(S_ISDIR(sb.st_mode))
-                {
-                    // TODO: relativize these paths
-                    append_dir(cwd, fname); 
-                    load_dir(cwd, &file_view);  
-                }
-                else
-                {
-                    add_file(&queue_view, fname);  
-                    show_view(&queue_view); 
-                }
+                add_file(&queue_view, fname);  
+                show_view(&queue_view); 
             }
             else if(cur_view == &queue_view)
             {
-
+                struct tarball *tar = new_tarball("a.tar", queue_view.filelist); 
+                double p; 
+                while((p = archive(tar, 20)) < 1)
+                {
+                    update_progress(p); 
+                    sleep(1); 
+                }
+                update_progress(1); 
+                del_tarball(tar); 
             }
         }
         else if(ch == KEY_BACKSPACE)
@@ -120,6 +119,15 @@ void gen_wins()
     box(queue_view.win, 0, 0); 
     wrefresh(queue_view.win); 
     keypad(queue_view.win, TRUE); 
+
+    int progress_height = ((LINES - view_height) / 2) * 0.7; 
+    int progress_width = COLS * 0.7; 
+    int progress_starty = (((LINES - view_height) / 2) - progress_height) / 2; 
+    int progress_startx = (COLS - progress_width) / 2; 
+
+    progress_bar = newwin(progress_height, progress_width, progress_starty, progress_startx);  
+    box(progress_bar, 0, 0); 
+    wrefresh(progress_bar); 
 }
 
 void setup_views() 
@@ -177,6 +185,9 @@ void load_dir(char *dirname, struct view *view)
         strcpy(view->filelist[n-1], entry->d_name); 
         entry = readdir(dir); 
     }
+    view->filelist = (char **) realloc(view->filelist, sizeof(char *) * (n+1)); 
+    view->filelist[n] = NULL; 
+
     qsort(view->filelist, n, sizeof(char *), compar_filename); 
 
     view->size = n; 
@@ -259,9 +270,11 @@ void add_file(struct view *view, char *filename)
     view->size++; 
     int n = view->size; 
 
-    view->filelist = (char **) realloc(view->filelist, sizeof(char *) * n); 
+    view->filelist = (char **) realloc(view->filelist, sizeof(char *) * (n+1)); 
     view->filelist[n-1] = (char *) malloc(sizeof(char) * (strlen(filename)+1)); 
     strcpy(view->filelist[n-1], filename); 
+
+    view->filelist[n] = NULL; 
 }
 
 void remove_file(struct view *view, int index)
@@ -275,18 +288,33 @@ void remove_file(struct view *view, int index)
     int n = view->size; 
 
     char **tmp = view->filelist; 
-    view->filelist = (char **) malloc(sizeof(char *) * n); 
+    view->filelist = (char **) malloc(sizeof(char *) * (n+1)); 
     for(int i = 0; i < index; ++i)
         view->filelist[i] = tmp[i]; 
     for(int i = index; i < view->size; ++i)
         view->filelist[i] = tmp[i+1]; 
     free(tmp); 
+
+    view->filelist[n] = NULL; 
+}
+
+void update_progress(double progress)
+{
+    int height = getmaxy(progress_bar) - 2; 
+    int width = getmaxx(progress_bar) - 2; 
+    
+    int complete = width * progress; 
+    for(int i = 0; i < complete; ++i)
+        mvwvline(progress_bar, 1, i+1, 
+                ' ' | A_REVERSE, height); 
+    wrefresh(progress_bar); 
 }
 
 void del_wins()
 {
     delwin(file_view.win); 
     delwin(queue_view.win); 
+    delwin(progress_bar); 
 }
 
 void cleanup_views()

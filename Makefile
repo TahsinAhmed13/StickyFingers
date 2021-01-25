@@ -1,8 +1,8 @@
-stickyfinger: main.o
-	gcc -o stickyfingers -lncurses main.o
+stickyfinger: main.o tarball.o
+	gcc -o stickyfingers -lm -lncurses main.o tarball.o
 
-main.o: main.c
-	gcc -c main.c
+main.o: main.c tarball.h
+	gcc -c main.c tarball.h
 
 tarball.o: tarball.c tarball.h
 	gcc -c tarball.c

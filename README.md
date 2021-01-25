@@ -64,8 +64,6 @@ Arch/Manjaro:
 sudo pacman -Syu ncurses
 ```
 
-# How to Use
-
 ---
 
 # DEVLOG
@@ -82,3 +80,32 @@ Implemented extracting tars.\
 Mon Jan 25, 2021 3:30 AM - Tahsin Ahmed\
 Add user interface.\
 \
+Mon Jan 25, 2021 9:48 AM - Tahsin Ahmed\
+Add loading bar. Kind of works...\
+\
+
+---
+
+# How to Use
+
+To run: 
+```
+make && make run
+```
+
+Controls: 
+* Arrow keys to navigate
+* Space to switch between views (view is highlighted)
+* Enter on file view (left) to add item
+* Backspace on queue view (right) to remove items
+* Enter on queue view to process
+* F1 to exit 
+
+Program will show progress bar as items are being archived. It will output an a.tar that is compatible with the Unix `tar` utility. 
+
+# Bugs and Shortcomings 
+
+* There isn't actually a queue. Queue view shows the next things to be processed. It is named after what it is supposed to be. :(
+* There are no forked processes. The program is mostly idle while tar is processing.
+* Tar file is defaulted to `a.tar`. Creating a popup window to get input would take too long.
+* The program cannot extract, although extraction is implemented. This can be tested through `tarball_test.c` and `make test`.
