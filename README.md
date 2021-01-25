@@ -79,3 +79,6 @@ Add tarball struct to store progress of an archive event. Also redefined archive
 Sat Jan 23, 2021 7:15 PM - Tahsin Ahmed\
 Implemented extracting tars.\
 \
+Mon Jan 25, 2021 3:30 AM - Tahsin Ahmed\
+Add user interface.\
+\

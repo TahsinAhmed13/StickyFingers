@@ -1,3 +1,9 @@
+stickyfinger: main.o
+	gcc -o stickyfingers -lncurses main.o
+
+main.o: main.c
+	gcc -c main.c
+
 tarball.o: tarball.c tarball.h
 	gcc -c tarball.c
 
@@ -7,7 +13,7 @@ tarball_test.o: tarball_test.c tarball.h
 tarball_test: tarball.o tarball_test.o
 	gcc -lm -o tarball_test tarball.o tarball_test.o
 
-.PHONY: clean test
+.PHONY: clean test run
 
 clean: 
 	-rm *.o
@@ -23,3 +29,6 @@ test: tarball_test
 	./tarball_test -x hello.tar
 	diff -s hello.txt hello2.txt
 	-rm tarball_test *.txt *.o *.tar
+
+run: stickyfingers
+	./stickyfingers
