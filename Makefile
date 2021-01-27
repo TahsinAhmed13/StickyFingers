@@ -1,5 +1,5 @@
 stickyfinger: main.o tarball.o
-	gcc -o stickyfingers -lm -lncurses main.o tarball.o
+	gcc main.o tarball.o -lm -lncurses -o stickyfingers
 
 main.o: main.c tarball.h
 	gcc -c main.c tarball.h
@@ -11,7 +11,7 @@ tarball_test.o: tarball_test.c tarball.h
 	gcc -c tarball_test.c
 
 tarball_test: tarball.o tarball_test.o
-	gcc -lm -o tarball_test tarball.o tarball_test.o
+	gcc tarball_test.o tarball.o -lm -o tarball_test 
 
 .PHONY: clean test run
 
